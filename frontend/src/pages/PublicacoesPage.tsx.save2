@@ -1,0 +1,18 @@
+import React from 'react';
+import StatusCardsGrid from '@/components/publications/StatusCardsGrid';
+import CreatePublicationButton from '@/components/publications/CreatePublicationButton';
+import RecentPublicationsSection from '@/components/publications/RecentPublicationsSection'; // Mantém
+
+const PublicacoesPage: React.FC = () => {
+  return (
+    <div>
+      <StatusCardsGrid />
+      <CreatePublicationButton />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <RecentPublicationsSection /> {/* Apenas o novo componente */}
+      </div>
+    </div>
+  );
+};
+
+export default PublicacoesPage;

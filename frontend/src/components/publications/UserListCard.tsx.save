@@ -1,0 +1,55 @@
+
+import React, { useState, useEffect } from 'react';
+import UserSearchAdd from './UserSearchAdd';
+import UserTable from './UserTable';
+import PaginationControls from './PaginationControls';
+import { UserData } from './UserTableRow';
+
+const initialUsers: UserData[] = [
+  { id: '1', avatar: "https://randomuser.me/api/portraits/women/44.jpg", name: "Ana Silva", username: "@anasilva", email: "ana.silva@exemplo.com", role: "Administrador", status: "Online", lastAccess: "Agora mesmo", isActive: true },
+  { id: '2', avatar: "https://randomuser.me/api/portraits/men/32.jpg", name: "Carlos Mendes", username: "@carlosm", email: "carlos.mendes@exemplo.com", role: "Editor", status: "Online", lastAccess: "Há 5 minutos", isActive: true },
+  { id: '3', name: "Mariana Costa", username: "@marianac", email: "mariana.costa@exemplo.com", role: "Visualizador", status: "Offline", lastAccess: "Há 2 dias", isActive: true },
+  { id: '4', avatar: "https://randomuser.me/api/portraits/men/45.jpg", name: "Rafael Santos", username: "@rafaels", email: "rafael.santos@exemplo.com", role: "Colaborador", status: "Offline", lastAccess: "Há 1 semana", isActive: false },
+  { id: '5', avatar: "https://randomuser.me/api/portraits/women/68.jpg", name: "Júlia Oliveira", username: "@juliao", email: "julia.oliveira@exemplo.com", role: "Editor", status: "Online", lastAccess: "Há 30 minutos", isActive: true },
+  // Add more users to test pagination, or fetch them
+];
+
+const ITEMS_PER_PAGE = 5;
+
+const UserListCard: React.FC = () => {
+  const [users, setUsers] = useState<UserData[]>(initialUsers);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const totalPages = Math.ceil(users.length / ITEMS_PER_PAGE);
+  
+  const paginatedUsers = users.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const handleUserStatusChange = (userId: string, isActive: boolean) => {
+    setUsers(prevUsers => 
+      prevUsers.map(user => 
+        user.id === userId ? { ...user, isActive, status: isActive ? 'Online' : 'Offline' } : user
+      )
+    );
+    // Here you would typically also make an API call to update the backend
+    console.log(`User ${userId} status changed to ${isActive ? 'active' : 'inactive'}`);
+  };
+  
+  return (
+    <div className="md:col-span-2 lg:col-span-3 bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
+      <UserSearchAdd />
+      <UserTable users={paginatedUsers} onUserStatusChange={handleUserStatusChange} />
+      <PaginationControls
+        currentPage={currentPage}
+        totalPages={totalPages}
+        itemsPerPage={ITEMS_PER_PAGE}
+        totalItems={users.length}
+        onPageChange={setCurrentPage}
+      />
+    </div>
+  );
+};
+
+export default UserListCard;
