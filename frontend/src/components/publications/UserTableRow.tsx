@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import UserActions from './UserActions';
-import { UserData } from './UserTableRow.types'; // Você pode manter esse tipo no mesmo arquivo se preferir.
+import { UserData } from './UserTableRow.types';
 
 interface UserTableRowProps {
   user: UserData;
@@ -8,7 +8,13 @@ interface UserTableRowProps {
   onUserDeleted?: (userId: string) => void;
 }
 
-const UserTableRow: React.FC<UserTableRowProps> = ({ user, onUserStatusChange, onUserDeleted }) => {
+const UserTableRow: React.FC<UserTableRowProps> = ({
+  user,
+  onUserStatusChange,
+  onUserDeleted
+}) => {
+  const [ativo, setAtivo] = useState(user.isActive);
+
   return (
     <tr className="border-b border-neutral-100 hover:bg-neutral-50 transition-colors">
       {/* Nome e avatar */}
@@ -43,12 +49,15 @@ const UserTableRow: React.FC<UserTableRowProps> = ({ user, onUserStatusChange, o
         </span>
       </td>
 
-      {/* Status Online/Offline */}
+      {/* Status */}
       <td className="px-4 py-3">
-        <div className="flex items-center space-x-1">
-          <span className={`w-2 h-2 rounded-full ${user.status === 'Online' ? 'bg-green-500' : 'bg-neutral-400'}`}></span>
-          <span className="text-xs">{user.status}</span>
-        </div>
+        <span
+          className={`inline-block px-2 py-1 text-xs font-semibold rounded-full ${
+            ativo ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'
+          }`}
+        >
+          {ativo ? 'Ativo' : 'Inativo'}
+        </span>
       </td>
 
       {/* Último acesso */}
@@ -58,8 +67,11 @@ const UserTableRow: React.FC<UserTableRowProps> = ({ user, onUserStatusChange, o
       <td className="px-4 py-3">
         <UserActions
           userId={user.id}
-          isActive={user.isActive}
-          onStatusChange={(isActive) => onUserStatusChange(user.id, isActive)}
+          isActive={ativo}
+          onStatusChange={(isActive) => {
+            setAtivo(isActive); // Atualiza o badge e o switch
+            onUserStatusChange(user.id, isActive); // Notifica componente pai, se necessário
+          }}
           onUserDeleted={onUserDeleted}
         />
       </td>

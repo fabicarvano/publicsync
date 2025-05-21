@@ -1,31 +1,15 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, status, Body
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from passlib.context import CryptContext
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 import mysql.connector
+import subprocess
 from datetime import datetime, timedelta
-from jose import JWTError, jwt  # Corrigido
-from datetime import datetime
+from jose import JWTError, jwt
+#from fastapi import Body
 import requests
-
-#Verificar ultimo acesso do usuário
-from datetime import datetime
-
-def format_last_access(dt):
-    if not dt:
-        return "Nunca acessou"
-    agora = datetime.now()
-    diff = agora - dt
-    if diff.days == 0:
-        return "Hoje"
-    elif diff.days == 1:
-        return "Ontem"
-    elif diff.days < 7:
-        return f"Há {diff.days} dias"
-    else:
-        return dt.strftime("%d/%m/%Y")
-
 
 # JWT Configurações
 SECRET_KEY = "chave_super_secreta_123456"
@@ -47,32 +31,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Verificar último acesso do usuário
 
-# Gera o token
-def criar_token(dados: dict):
-    to_encode = dados.copy()
-    to_encode.update({"exp": datetime.utcnow() + timedelta(minutes=EXPIRA_MINUTOS)})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-# Verifica e decodifica o token
-def verificar_token(token: str = Depends(oauth2_scheme)):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return {"usuario": payload["sub"], "permissao": payload["permissao"]}
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Token inválido ou expirado")
-
-# Verifica se o token é válido e se a permissão é 'admin'
-def verificar_permissao_admin(token: str = Depends(oauth2_scheme)):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        if payload.get("permissao") != "admin":
-            raise HTTPException(status_code=403, detail="Acesso restrito a administradores")
-        return payload["sub"]
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Token inválido ou expirado")
+def format_last_access(dt):
+    if not dt:
+        return "Nunca acessou"
+    agora = datetime.now()
+    diff = agora - dt
+    if diff.days == 0:
+        return "Hoje"
+    elif diff.days == 1:
+        return "Ontem"
+    elif diff.days < 7:
+        return f"Há {diff.days} dias"
+    else:
+        return dt.strftime("%d/%m/%Y")
 
 # Conexão MySQL
+
 def conectar():
     return mysql.connector.connect(
         host="localhost",
@@ -95,15 +71,42 @@ class Publicacao(BaseModel):
 class GerarConteudo(BaseModel):
     id: int
 
+class NovoUsuario(BaseModel):
+    nome: str
+    email: str
+    senha: str
+    perfil: str  # Deve ser 'admin' ou 'usuario'
+
+# Gera o token
+
+def criar_token(dados: dict):
+    to_encode = dados.copy()
+    to_encode.update({"exp": datetime.utcnow() + timedelta(minutes=EXPIRA_MINUTOS)})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+def verificar_token(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return {"usuario": payload["sub"], "permissao": payload["permissao"]}
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Token inválido ou expirado")
+
+def verificar_permissao_admin(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("permissao") != "admin":
+            raise HTTPException(status_code=403, detail="Acesso restrito a administradores")
+        return payload["sub"]
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Token inválido ou expirado")
+
 # Login
 @app.post("/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends()):
     conn = conectar()
     cursor = conn.cursor(dictionary=True)
-
     cursor.execute("SELECT * FROM usuarios WHERE email = %s", (form_data.username,))
     usuario = cursor.fetchone()
-
     cursor.close()
     conn.close()
 
@@ -115,8 +118,48 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
         "nome": usuario["nome"],
         "permissao": usuario["perfil"]
     })
-
+    registrar_atividade(usuario["nome"], "fez login no sistema", "usuario")
     return {"access_token": token, "token_type": "bearer"}
+
+
+# Cria log de atividades
+def registrar_atividade(usuario: str, acao: str, tipo: str):
+    conn = conectar()
+    cursor = conn.cursor()
+    try:
+        agora = datetime.now()  # inclui data e hora
+        cursor.execute("""
+            INSERT INTO log_atividades (usuario, acao, tipo, data)
+            VALUES (%s, %s, %s, %s)
+        """, (usuario, acao, tipo, agora))
+        conn.commit()
+    except Exception as e:
+        print(f"Erro ao registrar log: {e}")
+    finally:
+        cursor.close()
+        conn.close()
+
+
+# Consulta consolidada de status de usuários
+@app.get("/usuarios/status")
+def contar_usuarios():
+    conn = conectar()
+    cursor = conn.cursor(dictionary=True)
+    sete_dias_atras = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+
+    cursor.execute("""
+        SELECT 
+            COUNT(*) AS total,
+            SUM(CASE WHEN ativo = 1 THEN 1 ELSE 0 END) AS ativos,
+            SUM(CASE WHEN ativo = 2 THEN 1 ELSE 0 END) AS inativos,
+            SUM(CASE WHEN data_criacao >= %s THEN 1 ELSE 0 END) AS novos
+        FROM usuarios
+    """, (sete_dias_atras,))
+
+    resultado = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return resultado
 
 # Rota protegida simples
 @app.get("/usuario/info")
@@ -208,6 +251,29 @@ def criar_usuario(dados: NovoUsuario, usuario: str = Depends(verificar_permissao
     finally:
         cursor.close()
         conn.close()
+#Rota para  atividdes recentes 
+@app.get("/atividades/recentes")
+def listar_atividades_recentes():
+    conn = conectar()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT usuario, acao, tipo, data
+        FROM log_atividades
+        ORDER BY data DESC
+        LIMIT 10
+    """)
+
+    atividades = cursor.fetchall()
+
+    for a in atividades:
+        a["tempo"] = format_last_access(a["data"])
+        # ⛔️ Não remover mais 'data'
+
+    cursor.close()
+    conn.close()
+
+    return atividades
 
 
 
@@ -369,7 +435,7 @@ def listar_usuarios(dados: dict = Depends(verificar_token)):
             "avatar": u["avatar"] if u["avatar"] else "/user.jpg",
             "status": "Online" if u["ativo"] else "Offline",
             "lastAccess": format_last_access(u["ultimo_acesso"]),
-            "isActive": bool(u["ativo"]),
+            "isActive": u["ativo"] == 1,
         })
 
     cursor.close()
@@ -421,6 +487,44 @@ def deletar_usuario(id: int, dados: dict = Depends(verificar_permissao_admin)):
         conn.close()
 
 
+class AtualizaStatusUsuario(BaseModel):
+    ativo: int
+
+
+#atica/inativa usuario
+@app.put("/usuarios/status/{id}")
+def atualizar_status_usuario(
+    id: int,
+    dados: AtualizaStatusUsuario,
+    usuario_logado: dict = Depends(verificar_token)
+):
+    conn = conectar()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("""
+            UPDATE usuarios
+            SET ativo = %s
+            WHERE id = %s
+        """, (dados.ativo, id))
+
+        cursor.execute("SELECT nome FROM usuarios WHERE id = %s", (id,))
+        resultado = cursor.fetchone()
+        nome_alterado = resultado[0] if resultado else f"ID {id}"
+
+        acao = f"inativou o usuário {nome_alterado}" if dados.ativo == 2 else f"ativou o usuário {nome_alterado}"
+        registrar_atividade(usuario_logado["usuario"], acao, "usuario")
+
+        conn.commit()
+        return {"mensagem": "Status atualizado com sucesso."}
+
+    except Exception as e:
+        print(f"Erro ao atualizar status: {e}")
+        return JSONResponse(content={"erro": "Erro ao atualizar status."}, status_code=500)
+
+    finally:
+        cursor.close()
+        conn.close()
 
 
 # configuraçõe para ADM
@@ -441,6 +545,21 @@ def acessar_configuracoes(usuario: str = Depends(verificar_permissao_admin)):
     conn.close()
     return {"executadas": len(publicacoes)}
 
+#executar Backup para Git
+@app.post("/backup", status_code=status.HTTP_202_ACCEPTED)
+def executar_backup(usuario: dict = Depends(verificar_permissao_admin)):
+    try:
+        resultado = subprocess.run(
+            ["bash", "/home/publicsync/backup_publicsync.sh"],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        if resultado.returncode != 0:
+            raise HTTPException(status_code=500, detail=f"Erro ao executar backup: {resultado.stderr}")
+        return {"mensagem": "Backup executado com sucesso!", "saida": resultado.stdout}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # ------------------------------------------------------------
 # 🔒 [PLANEJAMENTO FUTURO] Controle de Permissão por Tipo de Usuário

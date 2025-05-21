@@ -18,13 +18,21 @@ const UserListCard: React.FC = () => {
   }, []);
 
   const carregarUsuarios = async () => {
-    try {
-      const response = await api.get("/usuarios");
-      setUsers(response.data);
-    } catch (error) {
-      console.error("Erro ao buscar usuários:", error);
-    }
-  };
+  try {
+    const response = await api.get("/usuarios");
+
+    // Ajuste: adiciona status baseado no isActive
+    const usuariosAtualizados = response.data.map((usuario: any) => ({
+      ...usuario,
+      status: usuario.isActive ? "Ativo" : "Inativo",
+    }));
+
+    setUsers(usuariosAtualizados);
+  } catch (error) {
+    console.error("Erro ao buscar usuários:", error);
+  }
+};
+
 
   const totalPages = Math.ceil(users.length / ITEMS_PER_PAGE);
 
@@ -33,13 +41,22 @@ const UserListCard: React.FC = () => {
     currentPage * ITEMS_PER_PAGE
   );
 
-  const handleUserStatusChange = (userId: string, isActive: boolean) => {
+  const handleUserStatusChange = async (userId: string, isActive: boolean) => {
+  try {
+    await api.put(`/usuarios/status/${userId}`, { ativo: isActive ? 1 : 2 });
     setUsers(prevUsers =>
       prevUsers.map(user =>
-        user.id === userId ? { ...user, isActive, status: isActive ? 'Online' : 'Offline' } : user
+        user.id === userId
+          ? { ...user, isActive, status: isActive ? 'Ativo' : 'Inativo' }
+          : user
       )
     );
-  };
+  } catch (error) {
+    console.error("Erro ao atualizar status do usuário:", error);
+    alert("Erro ao atualizar status do usuário.");
+  }
+};
+
 
   const handleUserDeleted = (userId: string) => {
     setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));

@@ -3,7 +3,6 @@ import React from 'react';
 import UserListCard from '@/components/publications/UserListCard';
 import UserStatsCard from '@/components/publications/UserStatsCard';
 import RecentActivitiesCard from '@/components/publications/RecentActivitiesCard';
-import QuickActionsCard from '@/components/publications/QuickActionsCard';
 import SecurityTipCard from '@/components/publications/SecurityTipCard';
 
 const UsuariosPage: React.FC = () => {
@@ -15,7 +14,6 @@ const UsuariosPage: React.FC = () => {
         <div className="md:col-span-1 space-y-5">
           <UserStatsCard />
           <RecentActivitiesCard />
-          <QuickActionsCard />
         </div>
       </div>
       <SecurityTipCard />

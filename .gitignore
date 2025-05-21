@@ -1,0 +1,36 @@
+# Ignora cache do Python
+__pycache__/
+*.pyc
+
+# Ignora arquivos temporários de edição
+*.save
+*.savr
+
+# Ignora diretórios do Node.js
+node_modules/
+dist/
+
+# Ignora logs
+*.log
+
+# Ignora backups locais
+*.zip
+
+# Ambiente virtual Python
+venv/
+
+# Cache e compilados Python
+__pycache__/
+*.pyc
+*.pyy
+
+# Temporários de edição
+*.save
+*.savr
+
+# Ambiente virtual
+venv/
+
+# Node
+node_modules/
+dist/

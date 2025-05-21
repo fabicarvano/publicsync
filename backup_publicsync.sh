@@ -1,28 +1,33 @@
 #!/bin/bash
 
-# === CONFIGURAÇÕES ===
-DATA=$(date +"%Y%m%d-%H%M") # Exemplo: 20250520-1230
-DESTINO="/home/backup_publisync-$DATA.zip"
+# === Caminho absoluto da pasta do projeto ===
+PROJETO="/home/publicsync"
+cd "$PROJETO" || exit 1
 
-# === REMOVER BACKUP ANTIGO (opcional) ===
-# rm -f /home/backup_publisync-*.zip
+# === Geração da data e nomes ===
+DATA=$(date +%Y-%m-%d-%H%M)
+MENSAGEM_COMMIT="🔒 Backup automático via backend em $DATA"
+TAG="backup-$DATA"
 
-# === CRIAR BACKUP DO PROJETO, EXCLUINDO ARQUIVOS DESNECESSÁRIOS ===
-echo "📦 Criando backup do projeto PubliSync..."
+echo "📦 Iniciando backup automático..."
 
-zip -r "$DESTINO" /home/publicsync \
-  -x "**/node_modules/*" \
-     "**/venv/*" \
-     "**/__pycache__/*" \
-     "**/*.pyc" \
-     "**/.git/*" \
-     "**/.DS_Store" \
-     "**/dist/*" \
-     "**/.env" \
-     "**/.next/*" \
-     "**/*.log" \
-     "**/coverage/*" \
-     "**/build/*" \
-  > /dev/null
+# Adiciona arquivos ao stage
+git add .
 
-echo "✅ Backup criado com sucesso em: $DESTINO"
+# Faz commit (não falha se não houver mudanças)
+git commit -m "$MENSAGEM_COMMIT" >/dev/null 2>&1 || echo "📝 Nenhuma alteração para commitar."
+
+# Cria a tag somente se ainda não existir
+if ! git rev-parse "$TAG" >/dev/null 2>&1; then
+  git tag "$TAG"
+  echo "🏷️  Tag criada: $TAG"
+else
+  echo "⚠️  Tag já existe: $TAG"
+fi
+
+# Push da branch principal e da tag
+git push origin main
+git push origin "$TAG"
+
+echo "✅ Backup finalizado com sucesso."
+

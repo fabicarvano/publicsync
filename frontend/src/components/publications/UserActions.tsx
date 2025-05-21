@@ -38,11 +38,30 @@ const UserActions: React.FC<UserActionsProps> = ({ userId, isActive, onStatusCha
       </button>
       <label className="inline-flex items-center cursor-pointer ml-2">
         <input
-          type="checkbox"
-          className="sr-only peer"
-          checked={isActive}
-          onChange={(e) => onStatusChange(e.target.checked)}
-        />
+  type="checkbox"
+  className="sr-only peer"
+  checked={isActive}
+  onChange={async (e) => {
+    const novoStatus = e.target.checked ? 1 : 2;
+
+    try {
+      await api.put(`/usuarios/status/${userId}`, {
+        ativo: novoStatus,
+      });
+
+      // Atualiza visualmente
+      onStatusChange(e.target.checked);
+
+      // Atualiza o card de estatísticas
+      window.dispatchEvent(new Event("refreshUserStats"));
+
+    } catch (error) {
+      console.error("Erro ao atualizar status:", error);
+      alert("Erro ao atualizar o status do usuário.");
+    }
+  }}
+/>
+
         <div className="w-9 h-5 bg-gray-300 rounded-full peer peer-checked:bg-green-500 relative">
           <div className="dot absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition peer-checked:translate-x-4"></div>
         </div>

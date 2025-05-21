@@ -59,10 +59,34 @@ const SystemMaintenanceSection: React.FC = () => {
             {/* For now, let's use shadcn's Switch component. Ensure it's installed or adapt. */}
             <Switch id="automatic-backup-toggle" defaultChecked />
           </div>
-          <button className="w-full py-2 mt-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors flex items-center justify-center">
-            <DownloadIcon className="w-5 h-5 mr-2" />
-            Download do backup
-          </button>
+          <button
+  onClick={async () => {
+    try {
+      const res = await fetch("http://192.168.0.15:8000/backup", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert(data.mensagem || "✅ Backup executado com sucesso!");
+      } else {
+        alert("❌ Erro ao executar backup: " + (data.detail || "Erro desconhecido"));
+      }
+    } catch (err) {
+      alert("❌ Erro inesperado ao executar backup.");
+      console.error(err);
+    }
+  }}
+  className="w-full py-2 mt-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors flex items-center justify-center"
+>
+  <DownloadIcon className="w-5 h-5 mr-2" />
+  Backup do Sistema
+</button>
+
         </div>
       </div>
     </div>
