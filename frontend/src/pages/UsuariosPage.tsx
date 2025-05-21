@@ -6,19 +6,25 @@ import RecentActivitiesCard from '@/components/publications/RecentActivitiesCard
 import SecurityTipCard from '@/components/publications/SecurityTipCard';
 
 const UsuariosPage: React.FC = () => {
-  return (
-    <div className="p-6 font-sans bg-gradient-to-br from-neutral-50 to-neutral-100 min-h-screen">
-      {/* O cabeçalho <header class="mb-6"> foi removido conforme solicitado */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+return (
+  <div className="p-6 font-sans bg-gradient-to-br from-neutral-50 to-neutral-100 min-h-screen">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      {/* Coluna principal: tabela de usuários */}
+      <div className="lg:col-span-2">
         <UserListCard />
-        <div className="md:col-span-1 space-y-5">
-          <UserStatsCard />
-          <RecentActivitiesCard />
-        </div>
       </div>
-      <SecurityTipCard />
+
+      {/* Coluna lateral direita: cards de status e atividades */}
+      <div className="space-y-6">
+        <UserStatsCard />
+        <RecentActivitiesCard />
+        <SecurityTipCard />
+      </div>
+
     </div>
-  );
+  </div>
+);
 };
 
 export default UsuariosPage;

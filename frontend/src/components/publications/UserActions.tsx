@@ -6,17 +6,18 @@ interface UserActionsProps {
   userId: string;
   isActive: boolean;
   onStatusChange: (isActive: boolean) => void;
-  onUserDeleted?: (userId: string) => void; // novo callback opcional
+  onUserDeleted?: (userId: string) => void;
+  onEdit?: () => void; // nova prop
 }
 
-const UserActions: React.FC<UserActionsProps> = ({ userId, isActive, onStatusChange, onUserDeleted }) => {
+const UserActions: React.FC<UserActionsProps> = ({ userId, isActive, onStatusChange, onUserDeleted, onEdit }) => {
   const handleDelete = async () => {
     if (confirm("Tem certeza que deseja excluir este usuário?")) {
       try {
         await api.delete(`/usuarios/${userId}`);
         alert("Usuário deletado com sucesso.");
         if (onUserDeleted) {
-          onUserDeleted(userId); // atualiza a lista no pai, se houver
+          onUserDeleted(userId);
         }
       } catch (error) {
         console.error("Erro ao deletar usuário:", error);
@@ -27,7 +28,10 @@ const UserActions: React.FC<UserActionsProps> = ({ userId, isActive, onStatusCha
 
   return (
     <div className="flex items-center space-x-2">
-      <button className="text-gray-500 hover:text-blue-600 transition">
+      <button
+        className="text-gray-500 hover:text-blue-600 transition"
+        onClick={onEdit} // chama função de edição
+      >
         <Pencil size={18} />
       </button>
       <button
@@ -37,11 +41,12 @@ const UserActions: React.FC<UserActionsProps> = ({ userId, isActive, onStatusCha
         <Trash2 size={18} />
       </button>
       <label className="inline-flex items-center cursor-pointer ml-2">
-        <input
+<input
   type="checkbox"
   className="sr-only peer"
   checked={isActive}
   onChange={async (e) => {
+    console.log("Alterando status para", e.target.checked); // <-- Adicione isso
     const novoStatus = e.target.checked ? 1 : 2;
 
     try {
@@ -49,10 +54,7 @@ const UserActions: React.FC<UserActionsProps> = ({ userId, isActive, onStatusCha
         ativo: novoStatus,
       });
 
-      // Atualiza visualmente
       onStatusChange(e.target.checked);
-
-      // Atualiza o card de estatísticas
       window.dispatchEvent(new Event("refreshUserStats"));
 
     } catch (error) {

@@ -6,26 +6,23 @@ interface UserTableRowProps {
   user: UserData;
   onUserStatusChange: (userId: string, isActive: boolean) => void;
   onUserDeleted?: (userId: string) => void;
+  onEditUser?: (user: UserData) => void;
 }
 
 const UserTableRow: React.FC<UserTableRowProps> = ({
   user,
   onUserStatusChange,
-  onUserDeleted
+  onUserDeleted,
+  onEditUser
 }) => {
-  const [ativo, setAtivo] = useState(user.isActive);
+  const [ativo, setAtivo] = useState(user.isActive); // controle local
 
   return (
     <tr className="border-b border-neutral-100 hover:bg-neutral-50 transition-colors">
-      {/* Nome e avatar */}
       <td className="px-4 py-3">
         <div className="flex items-center">
           <div className="h-10 w-10 rounded-full overflow-hidden bg-neutral-200 mr-3 flex-shrink-0">
-            <img
-              src={user.avatar || "/user.jpg"}
-              alt={user.name}
-              className="h-full w-full object-cover"
-            />
+            <img src={user.avatar || "/user.jpg"} alt={user.name} className="h-full w-full object-cover" />
           </div>
           <div>
             <div className="font-medium">{user.name}</div>
@@ -34,10 +31,8 @@ const UserTableRow: React.FC<UserTableRowProps> = ({
         </div>
       </td>
 
-      {/* Email */}
       <td className="px-4 py-3 text-sm">{user.email}</td>
 
-      {/* Função */}
       <td className="px-4 py-3">
         <span className={`px-2 py-1 text-xs rounded-full ${
           user.role === 'Administrador' ? 'bg-primary-100 text-primary-700' :
@@ -49,30 +44,26 @@ const UserTableRow: React.FC<UserTableRowProps> = ({
         </span>
       </td>
 
-      {/* Status */}
       <td className="px-4 py-3">
-        <span
-          className={`inline-block px-2 py-1 text-xs font-semibold rounded-full ${
-            ativo ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'
-          }`}
-        >
+        <span className={`inline-block px-2 py-1 text-xs font-semibold rounded-full ${
+          ativo ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'
+        }`}>
           {ativo ? 'Ativo' : 'Inativo'}
         </span>
       </td>
 
-      {/* Último acesso */}
       <td className="px-4 py-3 text-sm">{user.lastAccess}</td>
 
-      {/* Ações */}
       <td className="px-4 py-3">
         <UserActions
           userId={user.id}
           isActive={ativo}
-          onStatusChange={(isActive) => {
-            setAtivo(isActive); // Atualiza o badge e o switch
-            onUserStatusChange(user.id, isActive); // Notifica componente pai, se necessário
+          onStatusChange={(novoStatus) => {
+            setAtivo(novoStatus); // ATUALIZA O SWITCH
+            onUserStatusChange(user.id, novoStatus); // AVISA O PAI
           }}
           onUserDeleted={onUserDeleted}
+          onEdit={() => onEditUser?.(user)}
         />
       </td>
     </tr>

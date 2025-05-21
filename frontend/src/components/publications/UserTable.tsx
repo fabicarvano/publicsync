@@ -3,7 +3,11 @@ import api from '@/services/api';
 import UserTableRow from './UserTableRow';
 import { UserData } from './UserTableRow.types';
 
-const UserTable: React.FC = () => {
+interface UserTableProps {
+  onEditUser?: (user: UserData) => void;
+}
+
+const UserTable: React.FC<UserTableProps> = ({ onEditUser }) => {
   const [usuarios, setUsuarios] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -58,6 +62,7 @@ const UserTable: React.FC = () => {
                 user={user}
                 onUserStatusChange={handleStatusChange}
                 onUserDeleted={handleUserDeleted}
+                onEditUser={onEditUser} // <-- Aqui foi adicionado
               />
             ))}
           </tbody>
