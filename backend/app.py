@@ -1,14 +1,13 @@
 from fastapi import FastAPI, HTTPException, Depends, status, Body
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from passlib.context import CryptContext
-from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import mysql.connector
 import subprocess
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
-#from fastapi import Body
+from pydantic import BaseModel, EmailStr
 import requests
 
 # JWT Configurações
@@ -375,6 +374,42 @@ def listar_publicacoes(pagina: int = 1, limite: int = 20):
         "total_paginas": (total + limite - 1) // limite
     }
 
+#reusmo das  publicações
+@app.get("/publicacoes/resumo")
+def resumo_publicacoes(usuario: dict = Depends(verificar_token)):
+    conn = conectar()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        cursor.execute("""
+            SELECT 
+                SUM(CASE WHEN status_publicacao = 'publicado' THEN 1 ELSE 0 END) AS publicadas,
+                SUM(CASE WHEN status_publicacao = 'agendado' THEN 1 ELSE 0 END) AS agendadas,
+                SUM(CASE WHEN status_publicacao = 'pendente' THEN 1 ELSE 0 END) AS pendentes,
+                SUM(curtidas + comentarios) AS interacoes
+            FROM publicacoes
+            WHERE usuario_id = (
+                SELECT id FROM usuarios WHERE email = %s
+            )
+        """, (usuario["usuario"],))
+
+        resumo = cursor.fetchone()
+        # Garante que zeros sejam retornados caso não existam registros
+        return {
+            "publicadas": resumo["publicadas"] or 0,
+            "agendadas": resumo["agendadas"] or 0,
+            "pendentes": resumo["pendentes"] or 0,
+            "interacoes": resumo["interacoes"] or 0
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
+
+
+
 
 # Obter publicação por ID
 @app.get("/publicacoes/{id}")
@@ -527,6 +562,39 @@ def atualizar_status_usuario(
         conn.close()
 
 
+#atualizer  usuário
+class AtualizarUsuario(BaseModel):
+    nome: str
+    email: EmailStr
+    perfil: str  # "admin" ou "usuario"
+
+@app.put("/usuarios/{id}")
+def editar_usuario(id: int, dados: AtualizarUsuario, usuario_logado: dict = Depends(verificar_permissao_admin)):
+    conn = conectar()
+    cursor = conn.cursor()
+
+    try:
+        # Atualiza o usuário no banco
+        cursor.execute("""
+            UPDATE usuarios
+            SET nome = %s, email = %s, perfil = %s
+            WHERE id = %s
+        """, (dados.nome, dados.email, dados.perfil, id))
+
+        conn.commit()
+
+        # Loga a ação
+        # registrar_atividade(usuario_logado["usuario"], f"editou o usuário {dados.nome}", "usuario")
+
+        return {"mensagem": "Usuário atualizado com sucesso."}
+    except Exception as e:
+        print(f"Erro ao editar usuário: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao editar usuário.")
+    finally:
+        cursor.close()
+        conn.close()
+
+
 # configuraçõe para ADM
 @app.get("/configuracoes")
 def acessar_configuracoes(usuario: str = Depends(verificar_permissao_admin)):
@@ -560,6 +628,7 @@ def executar_backup(usuario: dict = Depends(verificar_permissao_admin)):
         return {"mensagem": "Backup executado com sucesso!", "saida": resultado.stdout}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 # ------------------------------------------------------------
 # 🔒 [PLANEJAMENTO FUTURO] Controle de Permissão por Tipo de Usuário

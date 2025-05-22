@@ -33,17 +33,15 @@ const UserTableRow: React.FC<UserTableRowProps> = ({
 
       <td className="px-4 py-3 text-sm">{user.email}</td>
 
-      <td className="px-4 py-3">
-        <span className={`px-2 py-1 text-xs rounded-full ${
-          user.role === 'Administrador' ? 'bg-primary-100 text-primary-700' :
-          user.role === 'Editor' ? 'bg-blue-100 text-blue-700' :
-          user.role === 'Visualizador' ? 'bg-green-100 text-green-700' :
-          'bg-amber-100 text-amber-700'
-        }`}>
-          {user.role}
-        </span>
-      </td>
-
+       <td className="px-4 py-3">
+         <span className={`px-2 py-1 text-xs rounded-full ${
+            user.role === 'admin' ? 'bg-red-100 text-red-700' :
+            user.role === 'usuario' ? 'bg-blue-100 text-blue-700' :
+           'bg-amber-100 text-amber-700'
+         }`}>
+       {user.role}
+     </span>
+   </td>
       <td className="px-4 py-3">
         <span className={`inline-block px-2 py-1 text-xs font-semibold rounded-full ${
           ativo ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'

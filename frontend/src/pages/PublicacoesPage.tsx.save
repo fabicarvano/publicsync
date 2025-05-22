@@ -1,21 +1,24 @@
-
 import React from 'react';
 import StatusCardsGrid from '@/components/publications/StatusCardsGrid';
 import CreatePublicationButton from '@/components/publications/CreatePublicationButton';
-import PublicationsList from '@/components/publications/PublicationsList';
+import RecentPublicationsSection from '@/components/publications/RecentPublicationsSection';
+import RecentPublicationList from '@/components/publications/RecentPublicationsList'; // <--- IMPORTADO AQUI
 
 const PublicacoesPage: React.FC = () => {
   return (
     <div>
       <StatusCardsGrid />
       <CreatePublicationButton />
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <PublicationsList />
-        {/* Placeholder for Notifications/Activity Feed if it was part of the original content */}
-        <div className="lg:col-span-1 bg-white p-6 rounded-xl shadow-md border border-gray-100">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">Atividade Recente</h2>
-          <p className="text-gray-600">Nenhuma atividade recente para mostrar.</p>
-          {/* This section was not detailed in the provided HTML, so it's a placeholder */}
+        {/* Coluna principal */}
+        <div className="lg:col-span-2">
+          <RecentPublicationsSection />
+        </div>
+
+        {/* Barra lateral com publicações recentes simples */}
+        <div className="lg:col-span-1 space-y-6">
+          <RecentPublicationList />
         </div>
       </div>
     </div>
