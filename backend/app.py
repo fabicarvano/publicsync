@@ -348,31 +348,46 @@ def criar_publicacao(dados: Publicacao):
     conn.close()
     return {"mensagem": "Publicação criada com sucesso", "id": novo_id}
 
-# Listar publicações
-# Listar publicações com paginação
+#listar pubicações para  cards de lita
 @app.get("/publicacoes")
-def listar_publicacoes(pagina: int = 1, limite: int = 20):
-    conn = conectar()
-    cursor = conn.cursor(dictionary=True)
+def listar_publicacoes(skip: int = 0, limit: int = 10, usuario_logado: dict = Depends(verificar_token)):
+    try:
+        conn = conectar()
+        cursor = conn.cursor(dictionary=True)
 
-    offset = (pagina - 1) * limite
+        query = """
+            SELECT 
+                id,
+                tema,
+                data_publicacao,
+                resposta AS descricao,
+                status_publicacao AS status,
+                linkedin_url AS link_publicacao,
+                imagem_url AS imagem,
+                curtidas,
+                comentarios,
+                compartilhamentos AS interacoes,
+                visualizacoes,
+                tom,
+                tipo,
+                objetivo
+            FROM publicacoes
+            ORDER BY data_publicacao DESC
+            LIMIT %s OFFSET %s
+        """
+        cursor.execute(query, (limit, skip))
+        resultados = cursor.fetchall()
 
-    cursor.execute("SELECT COUNT(*) AS total FROM publicacoes")
-    total = cursor.fetchone()["total"]
+        return resultados
 
-    cursor.execute("SELECT * FROM publicacoes ORDER BY id DESC LIMIT %s OFFSET %s", (limite, offset))
-    publicacoes = cursor.fetchall()
+    except mysql.connector.Error as err:
+        raise HTTPException(status_code=500, detail=str(err))
 
-    cursor.close()
-    conn.close()
+    finally:
+        if conn.is_connected():
+            cursor.close()
+            conn.close()
 
-    return {
-        "publicacoes": publicacoes,
-        "pagina": pagina,
-        "limite": limite,
-        "total": total,
-        "total_paginas": (total + limite - 1) // limite
-    }
 
 #reusmo das  publicações
 @app.get("/publicacoes/resumo")

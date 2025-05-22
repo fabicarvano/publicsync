@@ -1,86 +1,138 @@
 import React from 'react';
-import TagEducationalIcon from '@/components/icons/TagEducationalIcon';
-import TagInformativeIcon from '@/components/icons/TagInformativeIcon';
-import TagCareerIcon from '@/components/icons/TagCareerIcon';
-import TagAnalysisIcon from '@/components/icons/TagAnalysisIcon';
-import ThumbsUpIcon from '@/components/icons/ThumbsUpIcon';
-import CopyLinkIcon from '@/components/icons/CopyLinkIcon';
-import PlayButtonIcon from '@/components/icons/PlayButtonIcon';
-import CalendarDateIcon from '@/components/icons/CalendarDateIcon';
-import EyeIcon from '@/components/icons/EyeIcon'; // Changed import
-import { MessageSquare } from 'lucide-react';
+import { format } from 'date-fns';
+import ptBR from 'date-fns/locale/pt-BR';
 
+import IconCalendar from '@/components/icons/IconCalendar';
+import IconCheckCircle from '@/components/icons/IconCheckCircle';
+import IconAlertTriangle from '@/components/icons/IconAlertTriangle';
+import IconThumbsUp from '@/components/icons/IconThumbsUp';
+import IconMessageSquare from '@/components/icons/IconMessageSquare';
+import IconEye from '@/components/icons/IconEye';
+import IconLink from '@/components/icons/IconLink';
+import PlayButtonIcon from '@/components/icons/PlayButtonIcon';
 
 interface Tag {
-  name: string;
-  bgColor: string;
-  textColor: string;
-  icon: React.ReactNode;
+  nome: string;
+  corDeFundo: string;
+  corTexto: string;
+  Icone: React.ElementType;
 }
 
 interface PublicationItemProps {
-  title: string;
-  description: string;
+  tema: string;
+  descricao: string;
   status: string;
-  statusBgColor: string;
-  statusTextColor: string;
-  tags: Tag[];
-  likes: number;
-  comments: number;
-  views: number;
-  date: string;
+  curtidas: number;
+  comentarios: number;
+  visualizacoes: number;
+  data_publicacao: string;
+  link_publicacao?: string;
+  imagem?: string;
+  tags?: Tag[];
 }
 
+
+const statusColors: Record<string, { bg: string; text: string }> = {
+  publicado: { bg: 'bg-green-100', text: 'text-green-700' },
+  pendente: { bg: 'bg-gray-100', text: 'text-gray-700' },
+  agendado: { bg: 'bg-blue-100', text: 'text-blue-700' },
+  em_publicacao: { bg: 'bg-yellow-100', text: 'text-yellow-700' },
+};
+
 const PublicationItem: React.FC<PublicationItemProps> = ({
-  title, description, status, statusBgColor, statusTextColor, tags, likes, comments, views, date
+  tema,
+  descricao,
+  status,
+  curtidas,
+  comentarios,
+  visualizacoes,
+  data_publicacao,
+  link_publicacao,
+  imagem,
+  tags = [],
 }) => {
+  
+  console.log('🧪 Renderizando item:', tema);
+  console.log('📦 Tags recebidas:', tags);
+  
+const data = new Date(data_publicacao);
+  const hoje = new Date();
+  const dataFormatada = format(data, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+
+  let StatusIcon = IconCalendar;
+  if (status === 'publicado') {
+    StatusIcon = IconCheckCircle;
+  } else if (data < hoje) {
+    StatusIcon = IconAlertTriangle;
+  }
+
+  const statusStyle = statusColors[status] || statusColors['pendente'];
+ 
+  console.log('🧩 Tags recebidas:', tags);
+     tags.forEach((tag, i) => {
+       if (!tag.Icone) {
+  console.error(`❌ Tag sem ícone na posição ${i}:`, tag);
+  }
+  });
+
   return (
-    <div className="border border-gray-100 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
+    <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 space-y-3">
       <div className="flex justify-between items-start">
         <div>
-          <h3 className="font-medium text-gray-800">{title}</h3>
-          <p className="text-sm text-gray-500 mt-1">{description}</p>
-          
-          <div className="flex flex-wrap gap-2 mt-2">
-            {tags.map((tag, index) => (
-              <span key={index} className={`px-2 py-1 ${tag.bgColor} ${tag.textColor} text-xs font-medium rounded-full flex items-center`}>
-                {tag.icon}
-                {tag.name}
-              </span>
-            ))}
-          </div>
+          <h3 className="text-base font-semibold text-gray-800 mb-1">{tema}</h3>
+          <p className="text-sm text-gray-600">{descricao}</p>
         </div>
-        <span className={`px-3 py-1 ${statusBgColor} ${statusTextColor} text-xs font-medium rounded-full`}>{status}</span>
+        {imagem && (
+          <img src={imagem} alt="Imagem da publicação" className="w-16 h-16 object-cover rounded-md" />
+        )}
       </div>
-      
-      <div className="flex items-center mt-4 space-x-6 border-t border-gray-100 pt-3">
-        <div className="flex items-center space-x-1 text-gray-500 hover:text-blue-600 transition-colors">
-          <ThumbsUpIcon className="w-5 h-5 text-gray-500" />
-          <span className="text-sm">{likes}</span>
+
+      <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+        <div className="flex items-center space-x-1">
+          <IconThumbsUp className="w-4 h-4 text-gray-500" />
+          <span>{curtidas}</span>
         </div>
-        <div className="flex items-center space-x-1 text-gray-500 hover:text-blue-600 transition-colors">
-          <MessageSquare size={20} className="text-gray-500" />
-          <span className="text-sm">{comments}</span>
+        <div className="flex items-center space-x-1">
+          <IconMessageSquare className="w-4 h-4 text-gray-500" />
+          <span>{comentarios}</span>
         </div>
-        <div className="flex items-center space-x-1 text-gray-500 hover:text-blue-600 transition-colors">
-          <EyeIcon className="text-gray-500" /> {/* Used EyeIcon */}
-          <span className="text-sm">{views}</span>
+        <div className="flex items-center space-x-1">
+          <IconEye className="w-4 h-4 text-gray-500" />
+          <span>{visualizacoes}</span>
+        </div>
+        <div className={`flex items-center space-x-2 ${statusStyle.text}`}>
+          <StatusIcon className={`w-4 h-4`} />
+          <span>{dataFormatada}</span>
         </div>
       </div>
-      
-      <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-100">
-        <div className="flex items-center space-x-2 text-sm text-gray-500">
-          <CalendarDateIcon />
-          <span>{date}</span>
-        </div>
-        <div className="flex space-x-2">
-          <button className="p-2 text-gray-500 hover:text-blue-600 transition-colors rounded-full hover:bg-blue-50" title="Copiar link">
-            <CopyLinkIcon />
+
+      <div className="flex gap-2 flex-wrap pt-2">
+        {tags.map((tag, index) => (
+          <span
+            key={index}
+            className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${tag.corDeFundo} ${tag.corTexto}`}
+          >
+            <tag.Icone className="w-3 h-3" />
+            {tag.nome}
+          </span>
+        ))}
+      </div>
+
+      <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+        {link_publicacao ? (
+          <a
+            href={link_publicacao}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center text-blue-600 hover:underline text-sm"
+          >
+            <IconLink className="w-4 h-4 mr-1" /> Ver no LinkedIn
+          </a>
+        ) : (
+          <button className="flex items-center text-blue-600 hover:underline text-sm">
+            <PlayButtonIcon className="w-4 h-4 mr-1" /> Publicar agora
           </button>
-          <button className="p-2 text-green-500 hover:text-green-600 transition-colors rounded-full hover:bg-green-50" title="Publicar agora">
-            <PlayButtonIcon />
-          </button>
-        </div>
+        )}
       </div>
     </div>
   );
