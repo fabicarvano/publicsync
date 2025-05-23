@@ -7,8 +7,12 @@ import mysql.connector
 import subprocess
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr
 import requests
+
+
+
 
 # JWT Configurações
 SECRET_KEY = "chave_super_secreta_123456"
@@ -21,6 +25,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # Inicia app
 app = FastAPI()
 
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 # CORS liberado para testes e frontend
 app.add_middleware(
     CORSMiddleware,
@@ -279,74 +284,74 @@ def listar_atividades_recentes():
 # Criar nova publicação e acionar IA
 
 
-    # Apos inserir, aciona IA automaticamente (sem gravar resposta no banco)
-@app.post("/publicacoes")
-def criar_publicacao(dados: Publicacao):
-    conn = conectar()
-    cursor = conn.cursor()
+     # Apos inserir, aciona IA automaticamente (sem gravar resposta no banco)
+#@app.post("/publicacoes")
+#def criar_publicacao(dados: Publicacao):
+#    conn = conectar()
+#    cursor = conn.cursor()
 
     # Verifica se a data foi informada
-    data_publicacao = dados.data_publicacao
-    agora = datetime.now()
-
-    # ✅ Validações
-    if not data_publicacao:
-        raise HTTPException(status_code=400, detail="A data e hora da publicação são obrigatórias.")
-    
-    if data_publicacao < agora:
-        raise HTTPException(status_code=400, detail="A data da publicação não pode ser no passado.")
-    
-    if (data_publicacao - agora).total_seconds() < 300:
-        raise HTTPException(status_code=400, detail="A data da publicação deve ser pelo menos 5 minutos após o horário atual.")
-
-    # ✅ Define o status com base na data
-    if data_publicacao > agora + timedelta(minutes=5):
-        status = "agendado"
-    else:
-        status = "pendente"
-
-    # ✅ Insere a publicação no banco
-    sql = """
-        INSERT INTO publicacoes (data_publicacao, tema, roteiro, tom, tipo, objetivo, resposta, status_publicacao)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-    """
-    valores = (
-        data_publicacao,
-        dados.tema,
-        dados.roteiro,
-        dados.tom,
-        dados.tipo,
-        dados.objetivo,
-        dados.resposta,
-        status
-    )
-
-    cursor.execute(sql, valores)
-    conn.commit()
-    novo_id = cursor.lastrowid
-
-    # ✅ Aciona o N8N para geração de conteúdo com IA
-    try:
-        url_n8n = "http://192.168.0.8:5678/webhook/gera-ia"
-        requests.post(
-            url_n8n,
-            json={
-                "id": novo_id,
-                "tema": dados.tema,
-                "roteiro": dados.roteiro,
-                "tom": dados.tom,
-                "tipo": dados.tipo,
-                "objetivo": dados.objetivo
-            },
-            timeout=1
-        )
-    except Exception as e:
-        print(f"Erro ao acionar IA: {e}")
-
-    # ✅ Finaliza a conexão
-    cursor.close()
-    conn.close()
-    return {"mensagem": "Publicação criada com sucesso", "id": novo_id}
+#    data_publicacao = dados.data_publicacao
+#    agora = datetime.now()
+#
+#    # ✅ Validações
+#    if not data_publicacao:
+#        raise HTTPException(status_code=400, detail="A data e hora da publicação são obrigatórias.")
+#    
+#    if data_publicacao < agora:
+#        raise HTTPException(status_code=400, detail="A data da publicação não pode ser no passado.")
+#    
+#    if (data_publicacao - agora).total_seconds() < 300:
+#        raise HTTPException(status_code=400, detail="A data da publicação deve ser pelo menos 5 minutos após o horário atual.")
+#
+#    # ✅ Define o status com base na data
+#    if data_publicacao > agora + timedelta(minutes=5):
+#        status = "agendado"
+#    else:
+#        status = "pendente"
+#
+#    # ✅ Insere a publicação no banco
+#    sql = """
+#        INSERT INTO publicacoes (data_publicacao, tema, roteiro, tom, tipo, objetivo, resposta, status_publicacao)
+#        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+#    """
+#    valores = (
+#        data_publicacao,
+#        dados.tema,
+#        dados.roteiro,
+#        dados.tom,
+#        dados.tipo,
+#        dados.objetivo,
+#        dados.resposta,
+#        status
+#    )
+#
+#    cursor.execute(sql, valores)
+#    conn.commit()
+#    novo_id = cursor.lastrowid
+#
+#    # ✅ Aciona o N8N para geração de conteúdo com IA
+#    try:
+#        url_n8n = "http://192.168.0.8:5678/webhook/gera-ia"
+#        requests.post(
+#            url_n8n,
+#            json={
+#                "id": novo_id,
+#                "tema": dados.tema,
+#                "roteiro": dados.roteiro,
+#                "tom": dados.tom,
+#                "tipo": dados.tipo,
+#                "objetivo": dados.objetivo
+#            },
+#            timeout=1
+#        )
+#    except Exception as e:
+#        print(f"Erro ao acionar IA: {e}")
+#
+#    # ✅ Finaliza a conexão
+#    cursor.close()
+#    conn.close()
+#    return {"mensagem": "Publicação criada com sucesso", "id": novo_id}
 
 #listar pubicações para  cards de lita
 @app.get("/publicacoes")
@@ -440,29 +445,29 @@ def obter_publicacao(id: int):
     return resultado
 
 # Atualizar resposta da publicação (usado somente ao agendar)
-@app.put("/publicacoes/{id}/resposta")
-def atualizar_resposta(id: int, dados: dict):
-    conn = conectar()
-    cursor = conn.cursor()
-    try:
-        cursor.execute(
-            "UPDATE publicacoes SET resposta = %s, status_publicacao = 'rascunho' WHERE id = %s",
-            (dados.get("resposta"), id)
-        )
-        conn.commit()
-        return {"mensagem": "Resposta atualizada com sucesso"}
-    except Exception as e:
-        return {"erro": str(e)}
-    finally:
-        cursor.close()
-        conn.close()
-
-
-@app.get("/executar-agendadas")
-def executar_agendadas():
-    agora = datetime.now()
-    conn = conectar()
-    cursor = conn.cursor(dictionary=True)
+#@app.put("/publicacoes/{id}/resposta")
+#def atualizar_resposta(id: int, dados: dict):
+#    conn = conectar()
+#    cursor = conn.cursor()
+#    try:
+#        cursor.execute(
+#            "UPDATE publicacoes SET resposta = %s, status_publicacao = 'rascunho' WHERE id = %s",
+#            (dados.get("resposta"), id)
+#        )
+#        conn.commit()
+#        return {"mensagem": "Resposta atualizada com sucesso"}
+#    except Exception as e:
+#        return {"erro": str(e)}
+#    finally:
+#        cursor.close()
+#        conn.close()
+#
+#
+#@app.get("/executar-agendadas")
+#def executar_agendadas():
+#    agora = datetime.now()
+#    conn = conectar()
+#    cursor = conn.cursor(dictionary=True)
 
 
 #lista  usuários do banco
@@ -494,32 +499,32 @@ def listar_usuarios(dados: dict = Depends(verificar_token)):
 
 
 
-    # Busca publicações que devem ser executadas
-    cursor.execute("""
-        SELECT * FROM publicacoes
-        WHERE status_publicacao = 'agendado'
-        AND data_publicacao <= %s
-    """, (agora,))
-    publicacoes = cursor.fetchall()
-
-    for pub in publicacoes:
-        try:
-            # Converte datetime para string ISO
-            dados_convertidos = {
-                k: (v.isoformat() if isinstance(v, datetime) else v)
-                for k, v in pub.items()
-            }
-
-            response = requests.post(
-                "https://light-catfish-46.hooks.n8n.cloud/webhook/publicar-linkedin",
-                json=dados_convertidos,
-                timeout=3
-            )
-
-            print(f"[✔] Publicação {pub['id']} enviada - status {response.status_code}")
-
-        except Exception as e:
-            print(f"[✘] Erro ao enviar publicação {pub['id']} para o N8N: {e}")
+#    # Busca publicações que devem ser executadas
+#    cursor.execute("""
+#        SELECT * FROM publicacoes
+#        WHERE status_publicacao = 'agendado'
+#        AND data_publicacao <= %s
+#    """, (agora,))
+#    publicacoes = cursor.fetchall()
+#
+#    for pub in publicacoes:
+#        try:
+#            # Converte datetime para string ISO
+#            dados_convertidos = {
+#                k: (v.isoformat() if isinstance(v, datetime) else v)
+#                for k, v in pub.items()
+#            }
+#
+#            response = requests.post(
+#                "https://light-catfish-46.hooks.n8n.cloud/webhook/publicar-linkedin",
+#                json=dados_convertidos,
+#                timeout=3
+#            )
+#
+#            print(f"[✔] Publicação {pub['id']} enviada - status {response.status_code}")
+#
+#        except Exception as e:
+#            print(f"[✘] Erro ao enviar publicação {pub['id']} para o N8N: {e}")
 
 #deltar usuários
 @app.delete("/usuarios/{id}")
@@ -541,7 +546,7 @@ class AtualizaStatusUsuario(BaseModel):
     ativo: int
 
 
-#atica/inativa usuario
+#ativa/inativa usuario
 @app.put("/usuarios/status/{id}")
 def atualizar_status_usuario(
     id: int,
@@ -598,8 +603,8 @@ def editar_usuario(id: int, dados: AtualizarUsuario, usuario_logado: dict = Depe
 
         conn.commit()
 
-        # Loga a ação
-        # registrar_atividade(usuario_logado["usuario"], f"editou o usuário {dados.nome}", "usuario")
+     # Loga a ação
+      # registrar_atividade(usuario_logado["usuario"], f"editou o usuário {dados.nome}", "usuario")
 
         return {"mensagem": "Usuário atualizado com sucesso."}
     except Exception as e:
@@ -645,39 +650,3 @@ def executar_backup(usuario: dict = Depends(verificar_permissao_admin)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# ------------------------------------------------------------
-# 🔒 [PLANEJAMENTO FUTURO] Controle de Permissão por Tipo de Usuário
-#
-# Objetivo: diferenciar acessos com base em perfis como "admin", "comum", etc.
-#
-# Como fazer:
-# 1. No momento do login, incluir no payload do token o campo "permissao":
-#       Ex: criar_token({"sub": form_data.username, "permissao": "admin"})
-# 2. Na função verificar_token(), extrair esse campo:
-#       permissao = payload.get("permissao")
-# 3. Usar Depends em rotas protegidas para validar permissões específicas:
-#       def rota_admin(usuario = Depends(verificar_token)):
-#           if usuario['permissao'] != "admin":
-#               raise HTTPException(403, detail="Acesso restrito")
-#
-# Exemplo de payload JWT:
-# {
-#     "sub": "fabio",
-#     "permissao": "comum",
-#     "exp": 1234567890
-# }
-#
-# Isso permitirá restringir funcionalidades por tipo de usuário.
-# ------------------------------------------------------------
-
-
-# --------------------------------------------
-# [🔐 CONTROLE DE PERMISSÕES - FUTURO]
-# O campo "permissao" já está sendo incluído no JWT.
-# Exemplo: {"sub": "fabio", "permissao": "admin"}
-#
-# ➤ Próximos passos para implementar controle de acesso:
-# 1. Criar função verificar_permissao() para validar tipos de usuários.
-# 2. Usar Depends(verificar_permissao) nas rotas com restrições.
-# 3. Aplicar lógica: if permissao != 'admin': raise HTTPException(403)
-# --------------------------------------------

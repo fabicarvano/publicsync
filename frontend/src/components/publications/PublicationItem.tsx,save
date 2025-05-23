@@ -1,7 +1,7 @@
 import React from 'react';
 import { format } from 'date-fns';
 import ptBR from 'date-fns/locale/pt-BR';
-import IconImage from '@/components/icons/IconImage';
+
 import IconCalendar from '@/components/icons/IconCalendar';
 import IconCheckCircle from '@/components/icons/IconCheckCircle';
 import IconAlertTriangle from '@/components/icons/IconAlertTriangle';
@@ -31,6 +31,7 @@ interface PublicationItemProps {
   tags?: Tag[];
 }
 
+
 const statusColors: Record<string, { bg: string; text: string }> = {
   publicado: { bg: 'bg-green-100', text: 'text-green-700' },
   pendente: { bg: 'bg-gray-100', text: 'text-gray-700' },
@@ -54,7 +55,7 @@ const PublicationItem: React.FC<PublicationItemProps> = ({
   console.log('🧪 Renderizando item:', tema);
   console.log('📦 Tags recebidas:', tags);
   
-  const data = new Date(data_publicacao);
+const data = new Date(data_publicacao);
   const hoje = new Date();
   const dataFormatada = format(data, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
 
@@ -68,36 +69,22 @@ const PublicationItem: React.FC<PublicationItemProps> = ({
   const statusStyle = statusColors[status] || statusColors['pendente'];
  
   console.log('🧩 Tags recebidas:', tags);
-  tags.forEach((tag, i) => {
-    if (!tag.Icone) {
-      console.error(`❌ Tag sem ícone na posição ${i}:`, tag);
-    }
+     tags.forEach((tag, i) => {
+       if (!tag.Icone) {
+  console.error(`❌ Tag sem ícone na posição ${i}:`, tag);
+  }
   });
 
   return (
-    <div className="relative bg-white border border-gray-200 rounded-lg shadow-sm p-4 space-y-3">
-      <span
-        className={`absolute top-2 right-2 px-3 py-1 text-xs font-semibold rounded-full ${statusStyle.bg} ${statusStyle.text}`}
-      >
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </span>
+    <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 space-y-3">
       <div className="flex justify-between items-start">
         <div>
           <h3 className="text-base font-semibold text-gray-800 mb-1">{tema}</h3>
           <p className="text-sm text-gray-600">{descricao}</p>
         </div>
-          {imagem && (
-           <a
-             href={imagem}
-             target="_blank"
-             rel="noopener noreferrer"
-             className="text-gray-700 hover:underline text-sm flex items-center"
-             title="Ver imagem da publicação"
-            >
-           <IconImage className="w-5 h-5 mr-1" />
-           Ver imagem
-          </a> 
-          )}
+        {imagem && (
+          <img src={imagem} alt="Imagem da publicação" className="w-16 h-16 object-cover rounded-md" />
+        )}
       </div>
 
       <div className="flex flex-wrap gap-4 text-sm text-gray-500">
@@ -142,7 +129,7 @@ const PublicationItem: React.FC<PublicationItemProps> = ({
             <IconLink className="w-4 h-4 mr-1" /> Ver no LinkedIn
           </a>
         ) : (
-          <button className="flex items-center text-green-800 hover:underline text-sm">
+          <button className="flex items-center text-blue-600 hover:underline text-sm">
             <PlayButtonIcon className="w-4 h-4 mr-1" /> Publicar agora
           </button>
         )}
@@ -152,4 +139,3 @@ const PublicationItem: React.FC<PublicationItemProps> = ({
 };
 
 export default PublicationItem;
-
