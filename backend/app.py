@@ -123,9 +123,13 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
         "permissao": usuario["perfil"]
     })
     registrar_atividade(usuario["nome"], "fez login no sistema", "usuario")
-    return {"access_token": token, "token_type": "bearer"}
-
-
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "nome": usuario["nome"],
+        "perfil": usuario["perfil"],
+        "avatar": usuario["avatar"] or "/public/user.jpg"
+}
 # Cria log de atividades
 def registrar_atividade(usuario: str, acao: str, tipo: str):
     conn = conectar()

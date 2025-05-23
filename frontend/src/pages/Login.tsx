@@ -24,9 +24,18 @@ const LoginPage = () => {
         throw new Error("Credenciais inválidas");
       }
 
-      const data = await response.json();
-      localStorage.setItem("token", data.access_token);
-      localStorage.setItem("perfil", data.perfil); // 'admin' ou 'usuario'
+const data = await response.json();
+
+const avatar = data.avatar || "/public/user.jpg";
+
+// Salvar tudo de forma centralizada
+localStorage.setItem("token", data.access_token);
+localStorage.setItem("user", JSON.stringify({
+  nome: data.nome,
+  perfil: data.perfil, // 'admin' ou 'usuario'
+  avatar: avatar,
+}));
+
 
       navigate("/dashboard");
     } catch (error: any) {
