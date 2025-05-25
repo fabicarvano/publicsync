@@ -83,7 +83,7 @@ const PublicationsList: React.FC = () => {
           visualizacoes={pub.visualizacoes || 0}
           data_publicacao={pub.data_publicacao}
           link_publicacao={pub.link_publicacao}
-          imagem={pub.imagem}
+          imagem_path={pub.imagem_path}
           tags={montarTags(pub)}
         />
       ))}

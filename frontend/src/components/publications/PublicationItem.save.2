@@ -1,3 +1,4 @@
+import React from 'react';
 import { format } from 'date-fns';
 import ptBR from 'date-fns/locale/pt-BR';
 import IconImage from '@/components/icons/IconImage';
@@ -9,6 +10,7 @@ import IconMessageSquare from '@/components/icons/IconMessageSquare';
 import IconEye from '@/components/icons/IconEye';
 import IconLink from '@/components/icons/IconLink';
 import PlayButtonIcon from '@/components/icons/PlayButtonIcon';
+from fastapi.staticfiles import StaticFiles
 
 interface Tag {
   nome: string;
@@ -29,6 +31,8 @@ interface PublicationItemProps {
   imagem_path?: string;
   tags?: Tag[];
 }
+app= FastAPI()
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 const statusColors: Record<string, { bg: string; text: string }> = {
   publicado: { bg: 'bg-green-100', text: 'text-green-700' },
@@ -49,6 +53,10 @@ const PublicationItem: React.FC<PublicationItemProps> = ({
   imagem_path,
   tags = [],
 }) => {
+  
+  console.log('🧪 Renderizando item:', tema);
+  console.log('📦 Tags recebidas:', tags);
+  
   const data = new Date(data_publicacao);
   const hoje = new Date();
   const dataFormatada = format(data, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
@@ -61,33 +69,38 @@ const PublicationItem: React.FC<PublicationItemProps> = ({
   }
 
   const statusStyle = statusColors[status] || statusColors['pendente'];
+ 
+  console.log('🧩 Tags recebidas:', tags);
+  tags.forEach((tag, i) => {
+    if (!tag.Icone) {
+      console.error(`❌ Tag sem ícone na posição ${i}:`, tag);
+    }
+  });
 
   return (
     <div className="relative bg-white border border-gray-200 rounded-lg shadow-sm p-4 space-y-3">
-      <span
-        className={`absolute top-2 right-2 px-3 py-1 text-xs font-semibold rounded-full ${statusStyle.bg} ${statusStyle.text}`}
-      >
-        {status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Sem status'}
+<span
+  className={`absolute top-2 right-2 px-3 py-1 text-xs font-semibold rounded-full ${statusStyle.bg} ${statusStyle.text}`}
+>
+  {status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Sem status'}
       </span>
-
       <div className="flex justify-between items-start">
         <div>
           <h3 className="text-base font-semibold text-gray-800 mb-1">{tema}</h3>
           <p className="text-sm text-gray-600">{descricao}</p>
         </div>
-
-        {imagem_path && (
-          <a
-             href={`http://192.168.0.15:8000${imagem_path}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-gray-700 hover:underline text-sm flex items-center ml-2"
-            title="Ver imagem da publicação"
-          >
-            <IconImage className="w-5 h-5 mr-1" />
-            Ver imagem
-          </a>
-        )}
+           {imagem_path && (
+            <a
+             href={imagem_path}
+             target="_blank"
+             rel="noopener noreferrer"
+             className="text-gray-700 hover:underline text-sm flex items-center"
+             title="Ver imagem da publicação"
+         >
+        <IconImage className="w-5 h-5 mr-1" />
+      Ver imagem
+    </a>
+    )}
       </div>
 
       <div className="flex flex-wrap gap-4 text-sm text-gray-500">
@@ -104,7 +117,7 @@ const PublicationItem: React.FC<PublicationItemProps> = ({
           <span>{visualizacoes}</span>
         </div>
         <div className={`flex items-center space-x-2 ${statusStyle.text}`}>
-          <StatusIcon className="w-4 h-4" />
+          <StatusIcon className={`w-4 h-4`} />
           <span>{dataFormatada}</span>
         </div>
       </div>
@@ -142,3 +155,4 @@ const PublicationItem: React.FC<PublicationItemProps> = ({
 };
 
 export default PublicationItem;
+

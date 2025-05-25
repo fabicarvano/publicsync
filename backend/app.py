@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, status, Body
+from fastapi import FastAPI, HTTPException, Depends, status, Body, Query
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from passlib.context import CryptContext
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,8 +10,7 @@ from jose import JWTError, jwt
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr
 import requests
-
-
+import traceback  
 
 
 # JWT Configurações
@@ -60,6 +59,18 @@ def conectar():
         password="fabio",
         database="publicacoes_db"
     )
+
+#buscar usuários no localStorage
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido ou expirado",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 # Modelos
 class Publicacao(BaseModel):
@@ -279,6 +290,7 @@ def criar_usuario(dados: NovoUsuario, usuario: str = Depends(verificar_permissao
     finally:
         cursor.close()
         conn.close()
+
 #Rota para  atividdes recentes 
 @app.get("/atividades/recentes")
 def listar_atividades_recentes():
@@ -376,46 +388,39 @@ def listar_atividades_recentes():
 #    cursor.close()
 #    conn.close()
 #    return {"mensagem": "Publicação criada com sucesso", "id": novo_id}
-
-#listar pubicações para  cards de lita
+#listar publicações no publicationsItem
 @app.get("/publicacoes")
-def listar_publicacoes(skip: int = 0, limit: int = 10, usuario_logado: dict = Depends(verificar_token)):
+def listar_publicacoes(
+    skip: int = Query(0),
+    limit: int = Query(10),
+    usuario: dict = Depends(get_current_user)
+):
     try:
         conn = conectar()
         cursor = conn.cursor(dictionary=True)
 
-        query = """
-            SELECT 
-                id,
-                tema,
-                data_publicacao,
-                resposta AS descricao,
-                status_publicacao AS status,
-                linkedin_url AS link_publicacao,
-                imagem_url AS imagem,
-                curtidas,
-                comentarios,
-                compartilhamentos AS interacoes,
-                visualizacoes,
-                tom,
-                tipo,
-                objetivo
+        cursor.execute("""
+            SELECT id, tema, roteiro, data_publicacao, 
+                   status_publicacao AS status,
+                   tom, tipo, objetivo,
+                   curtidas, comentarios, visualizacoes,
+                   linkedin_url, imagem_url, imagem_path
             FROM publicacoes
+            WHERE usuario_id = %s
             ORDER BY data_publicacao DESC
             LIMIT %s OFFSET %s
-        """
-        cursor.execute(query, (limit, skip))
-        resultados = cursor.fetchall()
+        """, (usuario["id"], limit, skip))
 
-        return resultados
+        resultado = cursor.fetchall()
+        conn.close()
+        return resultado
 
-    except mysql.connector.Error as err:
-        raise HTTPException(status_code=500, detail=str(err))
+    except Exception as e:
+        print("❌ Erro ao listar publicações:")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail="Erro interno ao listar publicações")
 
-    finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
 
 
 #reusmo das  publicações
