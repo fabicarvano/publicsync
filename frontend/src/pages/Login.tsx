@@ -32,7 +32,8 @@ const avatar = data.avatar || "/public/user.jpg";
 localStorage.setItem("token", data.access_token);
 localStorage.setItem("user", JSON.stringify({
   nome: data.nome,
-  perfil: data.perfil, // 'admin' ou 'usuario'
+  perfil: data.perfil, 
+  usuario_id: data.usuario_id, 
   avatar: avatar,
 }));
 

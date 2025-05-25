@@ -1,106 +1,52 @@
-import React from "react";
-import { LogOut, Pencil, Linkedin } from "lucide-react";
+import React from 'react';
+import { useUserInfo } from '@/hooks/useUserInfo';
+import { LogOut, Pencil, Link2Off } from 'lucide-react';
 
-interface AvatarDropdownProps {
-  nome: string;
-  email: string;
-  avatarUrl: string;
-  perfil: "Administrador" | "Usuário";
-  conectadoLinkedin: boolean;
-  creditosUsados: number;
-  creditosTotais: number;
-  totalPublicadas: number;
-  totalAgendadas: number;
-  totalPendentes: number;
-  onEditarPerfil: () => void;
-  onLogout: () => void;
-}
-
-const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
-  nome,
-  email,
-  avatarUrl,
-  perfil,
-  conectadoLinkedin,
-  creditosUsados,
-  creditosTotais,
-  totalPublicadas,
-  totalAgendadas,
-  totalPendentes,
-  onEditarPerfil,
-  onLogout,
-}) => {
-  const progresso = (creditosUsados / creditosTotais) * 100;
+const AvatarDropdown: React.FC = () => {
+  const { user } = useUserInfo() || {};
 
   return (
-    <div className="bg-white shadow-md rounded-2xl p-4 w-full max-w-sm text-center border border-dashed border-red-300">
-      <img
-        src={avatarUrl}
-        alt="Avatar"
-        className="w-24 h-24 rounded-full mx-auto mb-2"
-      />
-      <h2 className="text-xl font-semibold text-gray-800">{nome}</h2>
-      <p className="text-sm text-gray-500">{email}</p>
-      <span className="bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded-full inline-block mt-2">
-        {perfil}
-      </span>
-
-      <div className="mt-4 flex items-center justify-center gap-2">
-        <span
-          className={`text-sm font-medium flex items-center gap-1 ${
-            conectadoLinkedin ? "text-blue-600" : "text-gray-400"
-          }`}
-        >
-          <Linkedin size={16} /> {conectadoLinkedin ? "Connected" : "Desconectado"}
-        </span>
-        <button
-          onClick={onEditarPerfil}
-          className="text-gray-600 hover:text-gray-900"
-        >
-          <Pencil size={16} />
-        </button>
-        <button
-          onClick={onLogout}
-          className="text-red-600 hover:text-red-800"
-        >
-          <LogOut size={16} />
-        </button>
+    <div className="w-64 bg-white rounded-2xl shadow-lg p-4 border text-sm text-neutral-700 space-y-4">
+      {/* Avatar + Nome + Perfil */}
+      <div className="flex flex-col items-center space-y-2">
+        <img
+          src={user?.avatar || '/public/user.jpg'}
+          alt="Avatar"
+          className="w-16 h-16 rounded-full border-2 border-blue-500 object-cover"
+        />
+        <div className="text-center">
+          <p className="font-semibold text-sm">{user?.nome || 'Usuário'}</p>
+          <p className="text-xs text-muted-foreground capitalize">{user?.perfil || 'perfil'}</p>
+        </div>
       </div>
 
-      <div className="bg-gray-100 rounded-xl p-3 mt-4">
-        <div className="flex justify-between text-sm text-gray-600 font-medium mb-1">
+      {/* Status Conexão */}
+      <div className="flex items-center justify-between text-neutral-500">
+        <div className="flex items-center gap-1 text-xs">
+          <Link2Off size={14} /> Desconectado
+        </div>
+        <div className="flex gap-2">
+          <Pencil size={14} className="cursor-pointer hover:text-blue-500" />
+          <LogOut size={14} className="cursor-pointer hover:text-red-500" />
+        </div>
+      </div>
+
+      {/* Créditos de IA */}
+      <div className="bg-neutral-100 px-3 py-2 rounded-xl">
+        <div className="flex justify-between items-center mb-1 text-xs font-semibold">
           <span>Créditos de IA</span>
-          <span>
-            {creditosUsados}/{creditosTotais}
-          </span>
+          <span className="text-neutral-400">3/10</span>
         </div>
-        <div className="w-full bg-gray-300 rounded-full h-2">
-          <div
-            className="bg-purple-500 h-2 rounded-full"
-            style={{ width: `${progresso}%` }}
-          ></div>
+        <div className="w-full bg-neutral-300 h-1 rounded-full">
+          <div className="bg-purple-500 h-1 rounded-full" style={{ width: '30%' }} />
         </div>
       </div>
 
-      <div className="mt-4 flex justify-around text-center">
-        <div>
-          <div className="text-xl font-bold text-green-700">
-            {totalPublicadas}
-          </div>
-          <div className="text-sm text-green-700">Publicadas</div>
-        </div>
-        <div>
-          <div className="text-xl font-bold text-blue-700">
-            {totalAgendadas}
-          </div>
-          <div className="text-sm text-blue-700">Agendadas</div>
-        </div>
-        <div>
-          <div className="text-xl font-bold text-gray-700">
-            {totalPendentes}
-          </div>
-          <div className="text-sm text-gray-700">Pendentes</div>
-        </div>
+      {/* Publicações resumo */}
+      <div className="flex justify-between text-xs font-medium px-1">
+        <span className="text-green-600">Publicadas</span>
+        <span className="text-blue-600">Agendadas</span>
+        <span className="text-yellow-500">Pendentes</span>
       </div>
     </div>
   );

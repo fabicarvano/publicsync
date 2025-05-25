@@ -120,7 +120,8 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
     token = criar_token({
         "sub": usuario["email"],
         "nome": usuario["nome"],
-        "permissao": usuario["perfil"]
+        "permissao": usuario["perfil"],
+        "id":usuario["id"]
     })
     registrar_atividade(usuario["nome"], "fez login no sistema", "usuario")
     return {
@@ -128,8 +129,27 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
         "token_type": "bearer",
         "nome": usuario["nome"],
         "perfil": usuario["perfil"],
+        "usuario_id": usuario["id"],
         "avatar": usuario["avatar"] or "/public/user.jpg"
 }
+# Cria log de atividades
+def registrar_atividade(usuario: str, acao: str, tipo: str):
+    conn = conectar()
+    cursor = conn.cursor()
+    try:
+        agora = datetime.now()  # inclui data e hora
+        cursor.execute("""
+            INSERT INTO log_atividades (usuario, acao, tipo, data)
+            VALUES (%s, %s, %s, %s)
+        """, (usuario, acao, tipo, agora))
+        conn.commit()
+    except Exception as e:
+        print(f"Erro ao registrar log: {e}")
+    finally:
+        cursor.close()
+        conn.close()
+
+
 # Cria log de atividades
 def registrar_atividade(usuario: str, acao: str, tipo: str):
     conn = conectar()
