@@ -7,8 +7,11 @@ import IconAlertTriangle from '@/components/icons/IconAlertTriangle';
 import IconThumbsUp from '@/components/icons/IconThumbsUp';
 import IconMessageSquare from '@/components/icons/IconMessageSquare';
 import IconEye from '@/components/icons/IconEye';
-import IconLink from '@/components/icons/IconLink';
+import LinkedinIcon from '@/components/icons/LinkedinIcon';
+import EditIcon from '@/components/icons/EditIcon';
 import PlayButtonIcon from '@/components/icons/PlayButtonIcon';
+import IconLinkedin from '@/components/icons/IconLinkedin';
+
 
 interface Tag {
   nome: string;
@@ -25,16 +28,15 @@ interface PublicationItemProps {
   comentarios: number;
   visualizacoes: number;
   data_publicacao: string;
-  link_publicacao?: string;
   imagem_path?: string;
   tags?: Tag[];
+  linkedin_url?: string;
 }
 
 const statusColors: Record<string, { bg: string; text: string }> = {
   publicado: { bg: 'bg-green-100', text: 'text-green-700' },
   pendente: { bg: 'bg-gray-100', text: 'text-gray-700' },
   agendado: { bg: 'bg-blue-100', text: 'text-blue-700' },
-  em_publicacao: { bg: 'bg-yellow-100', text: 'text-yellow-700' },
 };
 
 const PublicationItem: React.FC<PublicationItemProps> = ({
@@ -45,9 +47,9 @@ const PublicationItem: React.FC<PublicationItemProps> = ({
   comentarios,
   visualizacoes,
   data_publicacao,
-  link_publicacao,
   imagem_path,
   tags = [],
+  linkedin_url,
 }) => {
   const data = new Date(data_publicacao);
   const hoje = new Date();
@@ -78,7 +80,7 @@ const PublicationItem: React.FC<PublicationItemProps> = ({
 
         {imagem_path && (
           <a
-             href={`http://192.168.0.15:8000${imagem_path}`}
+            href={`http://192.168.0.15:8000${imagem_path}`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-gray-700 hover:underline text-sm flex items-center ml-2"
@@ -120,22 +122,30 @@ const PublicationItem: React.FC<PublicationItemProps> = ({
           </span>
         ))}
       </div>
-            <div className="flex justify-between items-center pt-2 border-t border-gray-100">
-              {status === 'publicado' && link_publicacao ? (
-                 <a
-                   href={link_publicacao}
-                   target="_blank"
-                   rel="noopener noreferrer"
-                   className="flex items-center text-blue-600 hover:underline text-sm"
-                >
-               <IconLink className="w-4 h-4 mr-1" /> Ver no LinkedIn
-              </a>
-               ) : status !== 'publicado' ? (
-              <button className="flex items-center text-green-800 hover:underline text-sm">
-               <PlayButtonIcon className="w-4 h-4 mr-1" /> Publicar agora
-             </button>
-             ) : null}
-         </div>
+<div className="flex justify-between items-center pt-2 border-t border-gray-100">
+  {status.toLowerCase() === 'publicado' && linkedin_url ? (
+    <a
+      href={linkedin_url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center text-blue-600 hover:underline text-sm"
+    >
+      <IconLinkedin className="w-4 h-4 mr-1" /> Ver no LinkedIn
+    </a>
+  ) : status.toLowerCase() !== 'publicado' ? (
+    <div className="flex gap-4">
+      <button className="flex items-center text-green-800 hover:underline text-sm">
+        <PlayButtonIcon className="w-4 h-4 mr-1" /> Publicar agora
+      </button>
+
+      {['agendado', 'pendente'].includes(status.toLowerCase()) && (
+        <button className="flex items-center text-blue-700 hover:underline text-sm">
+          <EditIcon className="w-4 h-4 mr-1" /> Editar
+        </button>
+      )}
+    </div>
+  ) : null}
+</div>
     </div>
   );
 };
