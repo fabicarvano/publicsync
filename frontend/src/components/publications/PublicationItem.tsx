@@ -120,23 +120,22 @@ const PublicationItem: React.FC<PublicationItemProps> = ({
           </span>
         ))}
       </div>
-
-      <div className="flex justify-between items-center pt-2 border-t border-gray-100">
-        {link_publicacao ? (
-          <a
-            href={link_publicacao}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center text-blue-600 hover:underline text-sm"
-          >
-            <IconLink className="w-4 h-4 mr-1" /> Ver no LinkedIn
-          </a>
-        ) : (
-          <button className="flex items-center text-green-800 hover:underline text-sm">
-            <PlayButtonIcon className="w-4 h-4 mr-1" /> Publicar agora
-          </button>
-        )}
-      </div>
+            <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+              {status === 'publicado' && link_publicacao ? (
+                 <a
+                   href={link_publicacao}
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   className="flex items-center text-blue-600 hover:underline text-sm"
+                >
+               <IconLink className="w-4 h-4 mr-1" /> Ver no LinkedIn
+              </a>
+               ) : status !== 'publicado' ? (
+              <button className="flex items-center text-green-800 hover:underline text-sm">
+               <PlayButtonIcon className="w-4 h-4 mr-1" /> Publicar agora
+             </button>
+             ) : null}
+         </div>
     </div>
   );
 };
