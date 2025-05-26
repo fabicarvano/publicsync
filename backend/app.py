@@ -143,6 +143,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
         "usuario_id": usuario["id"],
         "avatar": usuario["avatar"] or "/public/user.jpg"
 }
+
 # Cria log de atividades
 def registrar_atividade(usuario: str, acao: str, tipo: str):
     conn = conectar()
@@ -212,18 +213,17 @@ def admin_area(dados: dict = Depends(verificar_token)):
         raise HTTPException(status_code=403, detail="Acesso negado. Apenas administradores.")
     return {"mensagem": f"Olá, {dados['usuario']}! Acesso autorizado como administrador."}
 
-# Busca categorias por tipo
+# Busca categorias  no banco
 @app.get("/categorias/{tipo}")
 def listar_categorias(tipo: str):
     conn = conectar()
     cursor = conn.cursor()
-    cursor.execute("SELECT valor FROM categorias_publicacao WHERE tipo = %s", (tipo,))
+    cursor.execute("SELECT nome FROM categorias WHERE tipo = %s", (tipo,))
     resultados = [linha[0] for linha in cursor.fetchall()]
     cursor.close()
     conn.close()
     return resultados
 
-# Busca categorias por nome de tipo
 @app.get("/categorias/tom")
 def listar_tons():
     conn = conectar()
@@ -244,15 +244,18 @@ def listar_tipos():
     conn.close()
     return resultado
 
-@app.get("/categorias/objetivo")
-def listar_objetivos():
+@app.get("/categorias/publico")
+def listar_publico():
     conn = conectar()
     cursor = conn.cursor()
-    cursor.execute("SELECT nome FROM categorias WHERE tipo = 'objetivo'")
+    cursor.execute("SELECT nome FROM categorias WHERE tipo = 'publico'")
     resultado = [row[0] for row in cursor.fetchall()]
     cursor.close()
     conn.close()
     return resultado
+
+
+
 
 # Criar novo usuário
 class NovoUsuario(BaseModel):
@@ -388,6 +391,7 @@ def listar_atividades_recentes():
 #    cursor.close()
 #    conn.close()
 #    return {"mensagem": "Publicação criada com sucesso", "id": novo_id}
+
 #listar publicações no publicationsItem
 @app.get("/publicacoes")
 def listar_publicacoes(
@@ -457,7 +461,25 @@ def resumo_publicacoes(usuario: dict = Depends(verificar_token)):
         cursor.close()
         conn.close()
 
+#listar datas das publicaçoes
+@app.get("/publicacoes/status-por-data")
+def listar_status_por_data():
+    conn = conectar()
+    cursor = conn.cursor(dictionary=True)
 
+    query = """
+        SELECT DATE(data_publicacao) AS data, status_publicacao AS status
+        FROM publicacoes
+        WHERE status_publicacao IN ('agendado', 'publicado')
+    """
+    cursor.execute(query)
+    rows = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    # Formata para retorno JSON: [{ data: '2025-05-26', status: 'publicado' }, ...]
+    return [{"data": row["data"].isoformat(), "status": row["status"]} for row in rows]
 
 
 # Obter publicação por ID
@@ -632,8 +654,8 @@ def editar_usuario(id: int, dados: AtualizarUsuario, usuario_logado: dict = Depe
 
         conn.commit()
 
-     # Loga a ação
-      # registrar_atividade(usuario_logado["usuario"], f"editou o usuário {dados.nome}", "usuario")
+# Loga a ação
+# registrar_atividade(usuario_logado["usuario"], f"editou o usuário {dados.nome}", "usuario")
 
         return {"mensagem": "Usuário atualizado com sucesso."}
     except Exception as e:
@@ -662,7 +684,7 @@ def acessar_configuracoes(usuario: str = Depends(verificar_permissao_admin)):
     conn.close()
     return {"executadas": len(publicacoes)}
 
-#executar Backup para Git
+# Executar Backup para Git
 @app.post("/backup", status_code=status.HTTP_202_ACCEPTED)
 def executar_backup(usuario: dict = Depends(verificar_permissao_admin)):
     try:
@@ -676,6 +698,7 @@ def executar_backup(usuario: dict = Depends(verificar_permissao_admin)):
             raise HTTPException(status_code=500, detail=f"Erro ao executar backup: {resultado.stderr}")
         return {"mensagem": "Backup executado com sucesso!", "saida": resultado.stdout}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print("Erro:", e)
+        raise HTTPException(status_code=500, detail="Erro inesperado ao executar o backup.")
 
 
