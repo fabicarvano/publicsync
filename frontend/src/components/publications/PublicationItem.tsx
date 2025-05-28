@@ -22,7 +22,7 @@ interface Tag {
 
 interface PublicationItemProps {
   tema: string;
-  descricao: string;
+  resposta: string;
   status: string;
   curtidas: number;
   comentarios: number;
@@ -41,7 +41,7 @@ const statusColors: Record<string, { bg: string; text: string }> = {
 
 const PublicationItem: React.FC<PublicationItemProps> = ({
   tema,
-  descricao,
+  resposta,
   status,
   curtidas,
   comentarios,
@@ -75,7 +75,7 @@ const PublicationItem: React.FC<PublicationItemProps> = ({
       <div className="flex justify-between items-start">
         <div>
           <h3 className="text-base font-semibold text-gray-800 mb-1">{tema}</h3>
-          <p className="text-sm text-gray-600">{descricao}</p>
+          <p className="text-sm text-gray-600">{resposta}</p>
         </div>
 
         {imagem_path && (

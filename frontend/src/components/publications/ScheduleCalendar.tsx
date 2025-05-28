@@ -98,14 +98,17 @@ const ScheduleCalendar: React.FC = () => {
             </SelectContent>
           </Select>
         </div>
+     <Button
+     className="w-full bg-blue-600 hover:bg-green-700 text-white font-body font-medium rounded shadow-sm"
+     onClick={() => {
+     localStorage.setItem('dataAgendamento', selectedDate?.toISOString() || '');
+     localStorage.setItem('horaAgendamento', selectedTime);
+     setShowCalendar(false);
+      }}
+      >
+      Confirmar agendamento
+      </Button>
 
-        <Button
-          className="w-full bg-blue-600 hover:bg-green-700 text-white font-body font-medium rounded shadow-sm"
-          onClick={handleAgendar}
-          disabled={isLoading}
-        >
-          {isLoading ? 'Agendando...' : 'Confirmar agendamento'}
-        </Button>
       </div>
     </div>
   );

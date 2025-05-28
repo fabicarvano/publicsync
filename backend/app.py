@@ -404,9 +404,9 @@ def listar_publicacoes(
         cursor = conn.cursor(dictionary=True)
 
         cursor.execute("""
-            SELECT id, tema, roteiro, data_publicacao, 
+            SELECT id, tema, data_publicacao, 
                    status_publicacao AS status,
-                   tom, tipo, objetivo,
+                   tom, tipo, objetivo, resposta,
                    curtidas, comentarios, visualizacoes,
                    linkedin_url, imagem_url, imagem_path
             FROM publicacoes
@@ -482,6 +482,14 @@ def listar_status_por_data():
     return [{"data": row["data"].isoformat(), "status": row["status"]} for row in rows]
 
 
+
+#agendar pubçiocação
+@app.post("/publicacoes/agendar")
+def agendar_publicacao(publicacao: dict, usuario: dict = Depends(get_current_user)):
+    # lógica de salvar com status 'agendada'
+    return {"mensagem": "Publicação agendada com sucesso"}
+
+
 # Obter publicação por ID
 @app.get("/publicacoes/{id}")
 def obter_publicacao(id: int):
@@ -494,6 +502,66 @@ def obter_publicacao(id: int):
     if not resultado:
         raise HTTPException(status_code=404, detail="Publicação não encontrada")
     return resultado
+
+#botão salar rascuno
+@app.post("/publicacoes/rascunho")
+def salvar_rascunho(publicacao: dict, usuario: dict = Depends(get_current_user)):
+    tema = publicacao.get("tema")
+    roteiro = publicacao.get("roteiro")
+    data_publicacao = publicacao.get("data_publicacao")
+
+    if not tema or not roteiro or not data_publicacao:
+        raise HTTPException(status_code=400, detail="Tema, roteiro e data são obrigatórios.")
+
+    try:
+    	data_publicacao = data_publicacao.replace("Z", "").split(".")[0]
+    	data_publicacao = datetime.fromisoformat(data_publicacao).strftime("%Y-%m-%d %H:%M:%S")
+    except Exception as e:
+    	raise HTTPException(status_code=400, detail="Formato de data inválido.")
+
+    tom = publicacao.get("tom")
+    tipo = publicacao.get("tipo")
+    objetivo = publicacao.get("objetivo")
+    imagem_url = publicacao.get("imagem_url")  # usar este campo corretamente
+    status = publicacao.get("status_publicacao", "rascunho")
+    usuario_id = usuario["id"]
+
+    conn = conectar()
+    cursor = conn.cursor()
+
+    query = """
+        INSERT INTO publicacoes (
+            tema, roteiro, data_publicacao,
+            tom, tipo, objetivo, imagem_url,
+            status_publicacao, usuario_id
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+    """
+    valores = (
+        tema,
+        roteiro,
+        data_publicacao,
+        tom,
+        tipo,
+        objetivo,
+        imagem_url,
+        status,
+        usuario_id
+    )
+
+    cursor.execute(query, valores)
+    conn.commit()
+    novo_id = cursor.lastrowid
+
+    cursor.close()
+    conn.close()
+
+    return {
+        "id": novo_id,
+        "mensagem": "Rascunho salvo com sucesso"
+    }
+
+
 
 # Atualizar resposta da publicação (usado somente ao agendar)
 #@app.put("/publicacoes/{id}/resposta")
